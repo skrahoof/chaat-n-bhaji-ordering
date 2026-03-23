@@ -1,18 +1,50 @@
 import express from 'express';
 import cors from 'cors';
 import bodyParser from 'body-parser';
-import fs from 'fs';
+import { MongoClient, ObjectId } from 'mongodb';
+import dotenv from 'dotenv';
 import path from 'path';
 import { fileURLToPath } from 'url';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
+// Load .env from parent directory
+dotenv.config({ path: path.join(__dirname, '..', '.env') });
+
+console.log('🔧 Starting server...');
+console.log('📁 .env path:', path.join(__dirname, '..', '.env'));
+
 const app = express();
-const PORT = 5000;
+const PORT = process.env.PORT || 5000;
+
+// MongoDB connection
+const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/chaatnbhaji';
+console.log('🔗 MongoDB URI:', MONGODB_URI ? 'Found' : 'Not found');
+let db;
+let ordersCollection;
+
+// Connect to MongoDB
+async function connectToDatabase() {
+  try {
+    const client = new MongoClient(MONGODB_URI);
+    await client.connect();
+    console.log('✅ Connected to MongoDB');
+    
+    db = client.db('chaatnbhaji');
+    ordersCollection = db.collection('orders');
+    
+    // Create indexes for better performance
+    await ordersCollection.createIndex({ timestamp: -1 });
+    await ordersCollection.createIndex({ status: 1 });
+    
+  } catch (error) {
+    console.error('❌ MongoDB connection error:', error);
+    process.exit(1);
+  }
+}
 
 // Middleware
-// Configure CORS to allow requests from frontend
 const allowedOrigins = [
   'http://localhost:3000',
   'http://192.168.0.105:3000',
@@ -23,15 +55,11 @@ const allowedOrigins = [
 
 app.use(cors({
   origin: function(origin, callback) {
-    // Allow requests with no origin (mobile apps, Postman, etc.)
     if (!origin) return callback(null, true);
-    
     if (allowedOrigins.includes(origin)) {
       callback(null, true);
     } else {
-      // For development, allow all origins
-      // In production, you should restrict this
-      callback(null, true);
+      callback(null, true); // Allow all in development
     }
   },
   credentials: true
@@ -39,66 +67,61 @@ app.use(cors({
 
 app.use(bodyParser.json());
 
-// Data file path
-const ordersFilePath = path.join(__dirname, 'data', 'orders.json');
-
-// Ensure data directory and file exist
-const ensureDataFile = () => {
-  const dataDir = path.join(__dirname, 'data');
-  if (!fs.existsSync(dataDir)) {
-    fs.mkdirSync(dataDir, { recursive: true });
-  }
-  if (!fs.existsSync(ordersFilePath)) {
-    fs.writeFileSync(ordersFilePath, JSON.stringify([], null, 2));
-  }
-};
-
-// Read orders from file
-const readOrders = () => {
-  ensureDataFile();
-  const data = fs.readFileSync(ordersFilePath, 'utf8');
-  return JSON.parse(data);
-};
-
-// Write orders to file
-const writeOrders = (orders) => {
-  ensureDataFile();
-  fs.writeFileSync(ordersFilePath, JSON.stringify(orders, null, 2));
-};
-
-// Generate unique ID
-const generateId = () => {
-  return Date.now().toString(36) + Math.random().toString(36).substr(2);
-};
-
 // Routes
 
+// Health check
+app.get('/api/health', (req, res) => {
+  res.json({ 
+    status: 'OK', 
+    timestamp: new Date().toISOString(),
+    database: db ? 'Connected' : 'Disconnected'
+  });
+});
+
 // Get all orders
-app.get('/api/orders', (req, res) => {
+app.get('/api/orders', async (req, res) => {
   try {
-    const orders = readOrders();
-    // Sort by timestamp, newest first
-    orders.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+    const orders = await ordersCollection
+      .find({})
+      .sort({ timestamp: -1 })
+      .toArray();
+    
     res.json(orders);
   } catch (error) {
-    console.error('Error reading orders:', error);
+    console.error('Error fetching orders:', error);
+    res.status(500).json({ error: 'Failed to fetch orders' });
+  }
+});
+
+// Get orders by status
+app.get('/api/orders/status/:status', async (req, res) => {
+  try {
+    const orders = await ordersCollection
+      .find({ status: req.params.status })
+      .sort({ timestamp: -1 })
+      .toArray();
+    
+    res.json(orders);
+  } catch (error) {
+    console.error('Error fetching orders by status:', error);
     res.status(500).json({ error: 'Failed to fetch orders' });
   }
 });
 
 // Create new order
-app.post('/api/orders', (req, res) => {
+app.post('/api/orders', async (req, res) => {
   try {
-    const orders = readOrders();
     const newOrder = {
-      id: generateId(),
       ...req.body,
       timestamp: new Date().toISOString(),
-      status: 'pending'
+      status: 'pending',
+      createdAt: new Date()
     };
-    orders.push(newOrder);
-    writeOrders(orders);
-    res.status(201).json(newOrder);
+    
+    const result = await ordersCollection.insertOne(newOrder);
+    const insertedOrder = await ordersCollection.findOne({ _id: result.insertedId });
+    
+    res.status(201).json(insertedOrder);
   } catch (error) {
     console.error('Error creating order:', error);
     res.status(500).json({ error: 'Failed to create order' });
@@ -106,39 +129,58 @@ app.post('/api/orders', (req, res) => {
 });
 
 // Update order status
-app.patch('/api/orders/:id', (req, res) => {
+app.patch('/api/orders/:id', async (req, res) => {
   try {
-    const orders = readOrders();
-    const orderIndex = orders.findIndex(order => order.id === req.params.id);
+    const { id } = req.params;
     
-    if (orderIndex === -1) {
+    // Try to find by _id (MongoDB ObjectId) or by custom id field
+    let query;
+    if (ObjectId.isValid(id)) {
+      query = { _id: new ObjectId(id) };
+    } else {
+      query = { id: id };
+    }
+    
+    const result = await ordersCollection.findOneAndUpdate(
+      query,
+      { 
+        $set: {
+          ...req.body,
+          updatedAt: new Date()
+        }
+      },
+      { returnDocument: 'after' }
+    );
+    
+    if (!result.value) {
       return res.status(404).json({ error: 'Order not found' });
     }
     
-    orders[orderIndex] = {
-      ...orders[orderIndex],
-      ...req.body
-    };
-    
-    writeOrders(orders);
-    res.json(orders[orderIndex]);
+    res.json(result.value);
   } catch (error) {
     console.error('Error updating order:', error);
     res.status(500).json({ error: 'Failed to update order' });
   }
 });
 
-// Delete order (optional)
-app.delete('/api/orders/:id', (req, res) => {
+// Delete order
+app.delete('/api/orders/:id', async (req, res) => {
   try {
-    const orders = readOrders();
-    const filteredOrders = orders.filter(order => order.id !== req.params.id);
+    const { id } = req.params;
     
-    if (orders.length === filteredOrders.length) {
+    let query;
+    if (ObjectId.isValid(id)) {
+      query = { _id: new ObjectId(id) };
+    } else {
+      query = { id: id };
+    }
+    
+    const result = await ordersCollection.deleteOne(query);
+    
+    if (result.deletedCount === 0) {
       return res.status(404).json({ error: 'Order not found' });
     }
     
-    writeOrders(filteredOrders);
     res.json({ message: 'Order deleted successfully' });
   } catch (error) {
     console.error('Error deleting order:', error);
@@ -146,13 +188,47 @@ app.delete('/api/orders/:id', (req, res) => {
   }
 });
 
-// Health check
-app.get('/api/health', (req, res) => {
-  res.json({ status: 'OK', timestamp: new Date().toISOString() });
+// Get analytics/statistics
+app.get('/api/analytics', async (req, res) => {
+  try {
+    const totalOrders = await ordersCollection.countDocuments();
+    const pendingOrders = await ordersCollection.countDocuments({ status: 'pending' });
+    const completedOrders = await ordersCollection.countDocuments({ status: 'completed' });
+    
+    // Calculate total revenue
+    const orders = await ordersCollection.find({ status: 'completed' }).toArray();
+    const totalRevenue = orders.reduce((sum, order) => sum + (order.total || 0), 0);
+    
+    res.json({
+      totalOrders,
+      pendingOrders,
+      completedOrders,
+      totalRevenue,
+      timestamp: new Date().toISOString()
+    });
+  } catch (error) {
+    console.error('Error fetching analytics:', error);
+    res.status(500).json({ error: 'Failed to fetch analytics' });
+  }
 });
 
-app.listen(PORT, () => {
-  console.log(`🚀 Server running on http://localhost:${PORT}`);
-  console.log(`📊 API endpoints available at http://localhost:${PORT}/api`);
-  ensureDataFile();
-});
+// Start server
+async function startServer() {
+  try {
+    console.log('🔌 Attempting to connect to MongoDB...');
+    await connectToDatabase();
+    console.log('✅ Database connection successful!');
+    
+    app.listen(PORT, () => {
+      console.log(`🚀 Server running on http://localhost:${PORT}`);
+      console.log(`📊 API endpoints available at http://localhost:${PORT}/api`);
+      console.log(`💾 Using MongoDB for persistent storage`);
+    });
+  } catch (error) {
+    console.error('❌ Failed to start server:', error.message);
+    process.exit(1);
+  }
+}
+
+console.log('🚀 Calling startServer()...');
+startServer();

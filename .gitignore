@@ -28,5 +28,5 @@ dist-ssr
 .env.local
 .env.production
 
-# Order data (optional - remove if you want to track orders in git)
+# Order data - Using MongoDB now, no need to track JSON file
 server/data/orders.json
