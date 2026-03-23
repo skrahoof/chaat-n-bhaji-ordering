@@ -17,8 +17,8 @@ const allowedOrigins = [
   'http://localhost:3000',
   'http://192.168.0.105:3000',
   'http://30.239.84.112:3000',
-  // Add your Vercel URL here after deployment
-  // Example: 'https://chaat-n-bhaji-ordering.vercel.app'
+  'https://chaat-n-bhaji-ordering.vercel.app',
+  'https://chaat-n-bhaji-ordering-krbhc6qu5-rahoof-shaiks-projects.vercel.app'
 ];
 
 app.use(cors({
