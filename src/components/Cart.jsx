@@ -148,22 +148,13 @@ const Cart = ({ cart, onClose, onUpdateQuantity, onClearCart }) => {
               <span className="text-primary-600">₹{total}</span>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <button
-                onClick={handlePlaceOrder}
-                disabled={isSubmitting}
-                className="btn-primary py-3 text-lg disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {isSubmitting ? 'Placing Order...' : 'Place Order'}
-              </button>
-              <button
-                onClick={generateWhatsAppMessage}
-                className="bg-green-500 hover:bg-green-600 text-white font-semibold py-3 px-4 rounded-lg transition-colors duration-200 flex items-center justify-center gap-2"
-              >
-                <Send size={20} />
-                Order via WhatsApp
-              </button>
-            </div>
+            <button
+              onClick={handlePlaceOrder}
+              disabled={isSubmitting}
+              className="w-full btn-primary py-3 text-lg disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {isSubmitting ? 'Placing Order...' : 'Place Order'}
+            </button>
           </div>
         )}
       </div>

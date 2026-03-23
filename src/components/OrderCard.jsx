@@ -7,9 +7,9 @@ const OrderCard = ({ order, onUpdateStatus }) => {
       case 'pending':
         return 'bg-yellow-100 text-yellow-800 border-yellow-300';
       case 'accepted':
-        return 'bg-blue-100 text-blue-800 border-blue-300';
+        return 'bg-orange-100 text-orange-800 border-orange-300';
       case 'preparing':
-        return 'bg-purple-100 text-purple-800 border-purple-300';
+        return 'bg-blue-100 text-blue-800 border-blue-300';
       case 'served':
         return 'bg-green-100 text-green-800 border-green-300';
       default:
