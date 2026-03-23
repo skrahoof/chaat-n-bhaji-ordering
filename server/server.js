@@ -9,11 +9,14 @@ import { fileURLToPath } from 'url';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// Load .env from parent directory
-dotenv.config({ path: path.join(__dirname, '..', '.env') });
+// Load .env from parent directory (for local development only)
+// In production (Render/Vercel), environment variables are set directly
+if (process.env.NODE_ENV !== 'production') {
+  dotenv.config({ path: path.join(__dirname, '..', '.env') });
+  console.log('📁 .env path:', path.join(__dirname, '..', '.env'));
+}
 
 console.log('🔧 Starting server...');
-console.log('📁 .env path:', path.join(__dirname, '..', '.env'));
 
 const app = express();
 const PORT = process.env.PORT || 5000;
