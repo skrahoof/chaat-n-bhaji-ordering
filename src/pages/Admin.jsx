@@ -11,16 +11,45 @@ const Admin = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
+  const [previousOrderCount, setPreviousOrderCount] = useState(0);
 
   // Admin password - Change this to your desired password
   const ADMIN_PASSWORD = 'admin123';
+
+  // Notification sound - plays when new order arrives
+  const playNotificationSound = () => {
+    // Create audio context for notification sound
+    const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+    const oscillator = audioContext.createOscillator();
+    const gainNode = audioContext.createGain();
+    
+    oscillator.connect(gainNode);
+    gainNode.connect(audioContext.destination);
+    
+    oscillator.frequency.value = 800;
+    oscillator.type = 'sine';
+    
+    gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+    gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.5);
+    
+    oscillator.start(audioContext.currentTime);
+    oscillator.stop(audioContext.currentTime + 0.5);
+  };
 
   const fetchOrders = async () => {
     setLoading(true);
     try {
       const apiUrl = import.meta.env.VITE_API_URL || '/api';
       const response = await axios.get(`${apiUrl}/orders`);
-      setOrders(response.data);
+      const newOrders = response.data;
+      
+      // Check if there's a new order (count increased)
+      if (previousOrderCount > 0 && newOrders.length > previousOrderCount) {
+        playNotificationSound();
+      }
+      
+      setPreviousOrderCount(newOrders.length);
+      setOrders(newOrders);
     } catch (error) {
       console.error('Error fetching orders:', error);
     } finally {
