@@ -88,10 +88,14 @@ const Admin = () => {
     try {
       const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000';
       await axios.patch(`${apiUrl}/api/orders/${orderId}`, { status: newStatus });
-      fetchOrders();
+      // Wait a bit before refreshing to avoid race conditions
+      setTimeout(() => fetchOrders(), 300);
     } catch (error) {
       console.error('Error updating order status:', error);
-      alert('Failed to update order status');
+      // Only show alert if it's a real error (not 404 during refresh)
+      if (error.response?.status !== 404) {
+        alert('Failed to update order status');
+      }
     }
   };
 
