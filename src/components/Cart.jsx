@@ -126,34 +126,54 @@ const Cart = ({ cart, onClose, onUpdateQuantity, onClearCart }) => {
         {/* Order Details & Checkout */}
         {cart.length > 0 && (
           <div className="border-t p-6 space-y-4">
-            <div className="space-y-3">
-              <input
-                type="text"
-                placeholder="Table Number"
-                value={tableNumber}
-                onChange={(e) => setTableNumber(e.target.value)}
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent outline-none"
-              />
-              <input
-                type="text"
-                placeholder="Your Name"
-                value={customerName}
-                onChange={(e) => setCustomerName(e.target.value)}
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent outline-none"
-              />
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  Table Number *
+                </label>
+                <input
+                  type="text"
+                  placeholder="Enter table number (e.g., 5)"
+                  value={tableNumber}
+                  onChange={(e) => setTableNumber(e.target.value)}
+                  className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none transition-all"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  Your Name *
+                </label>
+                <input
+                  type="text"
+                  placeholder="Enter your name"
+                  value={customerName}
+                  onChange={(e) => setCustomerName(e.target.value)}
+                  className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none transition-all"
+                />
+              </div>
             </div>
 
-            <div className="flex items-center justify-between text-xl font-bold py-3 border-t border-b">
-              <span>Total</span>
+            <div className="flex items-center justify-between text-xl font-bold py-4 border-t-2 border-b-2 border-gray-200">
+              <span className="text-gray-800">Total</span>
               <span className="text-primary-600">₹{total}</span>
             </div>
 
             <button
               onClick={handlePlaceOrder}
               disabled={isSubmitting}
-              className="w-full btn-primary py-3 text-lg disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-full btn-primary py-4 text-lg font-bold disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
             >
-              {isSubmitting ? 'Placing Order...' : 'Place Order'}
+              {isSubmitting ? (
+                <>
+                  <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
+                  Placing Order...
+                </>
+              ) : (
+                <>
+                  <Send size={20} />
+                  Place Order
+                </>
+              )}
             </button>
           </div>
         )}
