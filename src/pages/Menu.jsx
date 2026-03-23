@@ -3,6 +3,7 @@ import { ShoppingCart, QrCode } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import MenuItem from '../components/MenuItem';
 import Cart from '../components/Cart';
+import Footer from '../components/Footer';
 import { menuData } from '../data/menuData';
 
 const Menu = () => {
@@ -143,6 +144,9 @@ const Menu = () => {
           onClearCart={() => setCart([])}
         />
       )}
+
+      {/* Footer */}
+      <Footer />
     </div>
   );
 };
