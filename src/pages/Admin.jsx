@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { ArrowLeft, RefreshCw, Lock, LogOut } from 'lucide-react';
+import { ArrowLeft, RefreshCw, Lock, LogOut, BarChart3 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import axios from 'axios';
 import OrderCard from '../components/OrderCard';
@@ -180,6 +180,14 @@ const Admin = () => {
               </div>
             </div>
             <div className="flex items-center gap-3">
+              <Link
+                to="/analytics"
+                className="flex items-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-700 rounded-lg transition-colors"
+                title="View Analytics"
+              >
+                <BarChart3 size={20} />
+                <span className="hidden sm:inline">Analytics</span>
+              </Link>
               <button
                 onClick={fetchOrders}
                 disabled={loading}

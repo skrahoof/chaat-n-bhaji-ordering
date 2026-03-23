@@ -1,5 +1,7 @@
 # Chaat N Bhaji - Food Ordering System
 
+**Live App:** https://chaat-n-bhaji-ordering.vercel.app
+
 A modern, mobile-responsive food ordering web application for "Chaat N Bhaji" chat center. Customers can scan a QR code, browse the menu, place orders, and staff can manage orders through an admin panel.
 
 ## Features

@@ -58,6 +58,19 @@ const OrderCard = ({ order, onUpdateStatus }) => {
     }
   };
 
+  const getButtonColor = (currentStatus) => {
+    switch (currentStatus) {
+      case 'pending':
+        return 'bg-orange-500 hover:bg-orange-600 text-white';
+      case 'accepted':
+        return 'bg-blue-500 hover:bg-blue-600 text-white';
+      case 'preparing':
+        return 'bg-green-500 hover:bg-green-600 text-white';
+      default:
+        return 'btn-primary';
+    }
+  };
+
   const formatTime = (timestamp) => {
     const date = new Date(timestamp);
     return date.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' });
@@ -99,7 +112,7 @@ const OrderCard = ({ order, onUpdateStatus }) => {
       {order.status !== 'served' && (
         <button
           onClick={() => onUpdateStatus(order.id, getNextStatus(order.status))}
-          className="w-full btn-primary py-3"
+          className={`w-full py-3 font-semibold rounded-lg transition-colors duration-200 ${getButtonColor(order.status)}`}
         >
           {getNextStatusLabel(order.status)}
         </button>
