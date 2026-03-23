@@ -135,27 +135,18 @@ app.post('/api/orders', async (req, res) => {
 app.patch('/api/orders/:id', async (req, res) => {
   try {
     const { id } = req.params;
-    console.log('📝 Updating order:', id, 'with:', req.body);
-    console.log('📏 ID length:', id.length, 'Type:', typeof id);
     
     // Try to find by _id (MongoDB ObjectId) or by custom id field
     let query;
-    let objectId;
     try {
       // Always try to convert to ObjectId first
-      objectId = new ObjectId(id);
-      query = { _id: objectId };
-      console.log('✅ ObjectId created:', objectId.toString());
+      query = { _id: new ObjectId(id) };
     } catch (e) {
       // If conversion fails, try as string
-      console.log('❌ ObjectId conversion failed:', e.message);
       query = { id: id };
     }
     
-    console.log('🔍 Query:', JSON.stringify(query));
-    console.log('🔍 Query _id type:', query._id ? query._id.constructor.name : 'N/A');
-    
-    // First, update the document
+    // Update the document
     const updateResult = await ordersCollection.updateOne(
       query,
       { 
@@ -166,20 +157,12 @@ app.patch('/api/orders/:id', async (req, res) => {
       }
     );
     
-    console.log('📊 Update result:', updateResult);
-    
     if (updateResult.matchedCount === 0) {
-      console.log('❌ Order not found:', id);
-      // List all order IDs to help debug
-      const allOrders = await ordersCollection.find({}).project({ _id: 1 }).toArray();
-      console.log('📋 Available order IDs:', allOrders.map(o => o._id.toString()));
       return res.status(404).json({ error: 'Order not found' });
     }
     
-    // Then fetch the updated document
+    // Fetch and return the updated document
     const updatedOrder = await ordersCollection.findOne(query);
-    
-    console.log('✅ Order updated successfully');
     res.json(updatedOrder);
   } catch (error) {
     console.error('Error updating order:', error);
