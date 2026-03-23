@@ -4,6 +4,8 @@ import { Link } from 'react-router-dom';
 import MenuItem from '../components/MenuItem';
 import Cart from '../components/Cart';
 import Footer from '../components/Footer';
+import HeroBanner from '../components/HeroBanner';
+import SpecialOffers from '../components/SpecialOffers';
 import { menuData } from '../data/menuData';
 
 const Menu = () => {
@@ -48,7 +50,7 @@ const Menu = () => {
           <div className="flex items-center justify-between">
             <div>
               <h1 className="text-3xl font-bold text-primary-400">Chaat N Bhaji</h1>
-              <p className="text-sm text-gray-300 mt-1">Satsriakal Paaji !! Khao Pav Bhaji</p>
+              <p className="text-sm text-gray-300 mt-1">Authentic Street Food Experience</p>
             </div>
             <div className="flex items-center gap-3">
               <Link
@@ -63,8 +65,13 @@ const Menu = () => {
         </div>
       </header>
 
+      {/* Hero Banner */}
+      <HeroBanner />
+
       {/* Main Content */}
       <main className="container mx-auto px-4 py-8 pb-32">
+        {/* Special Offers */}
+        <SpecialOffers />
         {/* Category Filter */}
         <div className="mb-8">
           <div className="flex gap-2 overflow-x-auto pb-4 scrollbar-hide">
