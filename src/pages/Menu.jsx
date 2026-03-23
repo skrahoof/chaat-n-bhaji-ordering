@@ -1,17 +1,23 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { ShoppingCart, QrCode } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import MenuItem from '../components/MenuItem';
 import Cart from '../components/Cart';
 import Footer from '../components/Footer';
 import HeroBanner from '../components/HeroBanner';
-import SpecialOffers from '../components/SpecialOffers';
+import FeaturedItems from '../components/FeaturedItems';
+import AnnouncementBar from '../components/AnnouncementBar';
 import { menuData } from '../data/menuData';
 
 const Menu = () => {
   const [cart, setCart] = useState([]);
   const [showCart, setShowCart] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState(null);
+
+  // Scroll to top on page load/reload
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, []);
 
   const handleAddToCart = (item, change) => {
     setCart(prevCart => {
@@ -44,6 +50,9 @@ const Menu = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
+      {/* Announcement Bar */}
+      <AnnouncementBar />
+      
       {/* Header */}
       <header className="bg-gradient-to-r from-gray-900 to-gray-800 text-white sticky top-0 z-40 shadow-lg">
         <div className="container mx-auto px-4 py-4">
@@ -65,13 +74,18 @@ const Menu = () => {
         </div>
       </header>
 
-      {/* Hero Banner */}
-      <HeroBanner />
-
       {/* Main Content */}
       <main className="container mx-auto px-4 py-8 pb-32">
-        {/* Special Offers */}
-        <SpecialOffers />
+        {/* Featured Special Items - First Thing Customers See! */}
+        <FeaturedItems 
+          onAddToCart={handleAddToCart}
+          getItemQuantity={getItemQuantity}
+        />
+        
+        {/* Hero Banner */}
+        <div className="my-8">
+          <HeroBanner />
+        </div>
         {/* Category Filter */}
         <div className="mb-8">
           <div className="flex gap-2 overflow-x-auto pb-4 scrollbar-hide">
