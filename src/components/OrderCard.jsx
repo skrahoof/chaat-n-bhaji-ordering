@@ -111,7 +111,7 @@ const OrderCard = ({ order, onUpdateStatus }) => {
 
       {order.status !== 'served' && (
         <button
-          onClick={() => onUpdateStatus(order.id, getNextStatus(order.status))}
+          onClick={() => onUpdateStatus(order._id, getNextStatus(order.status))}
           className={`w-full py-3 font-semibold rounded-lg transition-colors duration-200 ${getButtonColor(order.status)}`}
         >
           {getNextStatusLabel(order.status)}
