@@ -139,9 +139,11 @@ app.patch('/api/orders/:id', async (req, res) => {
     
     // Try to find by _id (MongoDB ObjectId) or by custom id field
     let query;
-    if (ObjectId.isValid(id)) {
+    try {
+      // Always try to convert to ObjectId first
       query = { _id: new ObjectId(id) };
-    } else {
+    } catch (e) {
+      // If conversion fails, try as string
       query = { id: id };
     }
     
@@ -158,7 +160,12 @@ app.patch('/api/orders/:id', async (req, res) => {
       { returnDocument: 'after' }
     );
     
-    if (!result.value) {
+    console.log('📊 Update result:', result);
+    
+    // MongoDB driver returns the document directly in newer versions
+    const updatedOrder = result.value || result;
+    
+    if (!updatedOrder || !updatedOrder._id) {
       console.log('❌ Order not found:', id);
       // List all order IDs to help debug
       const allOrders = await ordersCollection.find({}).project({ _id: 1 }).toArray();
@@ -167,7 +174,7 @@ app.patch('/api/orders/:id', async (req, res) => {
     }
     
     console.log('✅ Order updated successfully');
-    res.json(result.value);
+    res.json(updatedOrder);
   } catch (error) {
     console.error('Error updating order:', error);
     res.status(500).json({ error: 'Failed to update order' });
