@@ -27,8 +27,8 @@ const Cart = ({ cart, onClose, onUpdateQuantity, onClearCart }) => {
         status: 'pending'
       };
 
-      const apiUrl = import.meta.env.VITE_API_URL || '/api';
-      await axios.post(`${apiUrl}/orders`, orderData);
+      const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+      await axios.post(`${apiUrl}/api/orders`, orderData);
       
       setOrderPlaced(true);
       setTimeout(() => {
