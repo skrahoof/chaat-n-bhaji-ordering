@@ -135,6 +135,7 @@ app.post('/api/orders', async (req, res) => {
 app.patch('/api/orders/:id', async (req, res) => {
   try {
     const { id } = req.params;
+    console.log('📝 Updating order:', id, 'with:', req.body);
     
     // Try to find by _id (MongoDB ObjectId) or by custom id field
     let query;
@@ -143,6 +144,8 @@ app.patch('/api/orders/:id', async (req, res) => {
     } else {
       query = { id: id };
     }
+    
+    console.log('🔍 Query:', JSON.stringify(query));
     
     const result = await ordersCollection.findOneAndUpdate(
       query,
@@ -156,9 +159,14 @@ app.patch('/api/orders/:id', async (req, res) => {
     );
     
     if (!result.value) {
+      console.log('❌ Order not found:', id);
+      // List all order IDs to help debug
+      const allOrders = await ordersCollection.find({}).project({ _id: 1 }).toArray();
+      console.log('📋 Available order IDs:', allOrders.map(o => o._id.toString()));
       return res.status(404).json({ error: 'Order not found' });
     }
     
+    console.log('✅ Order updated successfully');
     res.json(result.value);
   } catch (error) {
     console.error('Error updating order:', error);
