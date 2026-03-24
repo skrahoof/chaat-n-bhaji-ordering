@@ -26,6 +26,7 @@ const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/chaatn
 console.log('🔗 MongoDB URI:', MONGODB_URI ? 'Found' : 'Not found');
 let db;
 let ordersCollection;
+let menuCollection;
 
 // Connect to MongoDB
 async function connectToDatabase() {
@@ -36,10 +37,12 @@ async function connectToDatabase() {
     
     db = client.db('chaatnbhaji');
     ordersCollection = db.collection('orders');
+    menuCollection = db.collection('menu');
     
     // Create indexes for better performance
     await ordersCollection.createIndex({ timestamp: -1 });
     await ordersCollection.createIndex({ status: 1 });
+    await menuCollection.createIndex({ categoryId: 1 });
     
   } catch (error) {
     console.error('❌ MongoDB connection error:', error);
@@ -192,6 +195,140 @@ app.delete('/api/orders/:id', async (req, res) => {
   } catch (error) {
     console.error('Error deleting order:', error);
     res.status(500).json({ error: 'Failed to delete order' });
+  }
+});
+
+// ===== MENU MANAGEMENT ENDPOINTS =====
+
+// Get all menu items (grouped by category)
+app.get('/api/menu', async (req, res) => {
+  try {
+    const menuItems = await menuCollection.find({}).toArray();
+    
+    // Group by category
+    const categories = {};
+    menuItems.forEach(item => {
+      if (!categories[item.categoryId]) {
+        categories[item.categoryId] = {
+          id: item.categoryId,
+          name: item.categoryName,
+          items: []
+        };
+      }
+      categories[item.categoryId].items.push({
+        id: item._id,
+        itemId: item.itemId,
+        name: item.name,
+        price: item.price,
+        description: item.description
+      });
+    });
+    
+    res.json({ categories: Object.values(categories) });
+  } catch (error) {
+    console.error('Error fetching menu:', error);
+    res.status(500).json({ error: 'Failed to fetch menu' });
+  }
+});
+
+// Get all categories
+app.get('/api/menu/categories', async (req, res) => {
+  try {
+    const categories = await menuCollection.distinct('categoryId');
+    const categoryDetails = await menuCollection.aggregate([
+      {
+        $group: {
+          _id: '$categoryId',
+          name: { $first: '$categoryName' }
+        }
+      }
+    ]).toArray();
+    
+    const formattedCategories = categoryDetails.map(cat => ({
+      id: cat._id,
+      name: cat.name
+    }));
+    
+    res.json(formattedCategories);
+  } catch (error) {
+    console.error('Error fetching categories:', error);
+    res.status(500).json({ error: 'Failed to fetch categories' });
+  }
+});
+
+// Add new menu item
+app.post('/api/menu', async (req, res) => {
+  try {
+    const { categoryId, categoryName, itemId, name, price, description } = req.body;
+    
+    const newItem = {
+      categoryId,
+      categoryName,
+      itemId,
+      name,
+      price: parseFloat(price),
+      description,
+      createdAt: new Date()
+    };
+    
+    const result = await menuCollection.insertOne(newItem);
+    const insertedItem = await menuCollection.findOne({ _id: result.insertedId });
+    
+    res.status(201).json(insertedItem);
+  } catch (error) {
+    console.error('Error adding menu item:', error);
+    res.status(500).json({ error: 'Failed to add menu item' });
+  }
+});
+
+// Update menu item
+app.patch('/api/menu/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { categoryId, categoryName, itemId, name, price, description } = req.body;
+    
+    const updateData = {
+      categoryId,
+      categoryName,
+      itemId,
+      name,
+      price: parseFloat(price),
+      description,
+      updatedAt: new Date()
+    };
+    
+    const result = await menuCollection.updateOne(
+      { _id: new ObjectId(id) },
+      { $set: updateData }
+    );
+    
+    if (result.matchedCount === 0) {
+      return res.status(404).json({ error: 'Menu item not found' });
+    }
+    
+    const updatedItem = await menuCollection.findOne({ _id: new ObjectId(id) });
+    res.json(updatedItem);
+  } catch (error) {
+    console.error('Error updating menu item:', error);
+    res.status(500).json({ error: 'Failed to update menu item' });
+  }
+});
+
+// Delete menu item
+app.delete('/api/menu/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    
+    const result = await menuCollection.deleteOne({ _id: new ObjectId(id) });
+    
+    if (result.deletedCount === 0) {
+      return res.status(404).json({ error: 'Menu item not found' });
+    }
+    
+    res.json({ message: 'Menu item deleted successfully' });
+  } catch (error) {
+    console.error('Error deleting menu item:', error);
+    res.status(500).json({ error: 'Failed to delete menu item' });
   }
 });
 

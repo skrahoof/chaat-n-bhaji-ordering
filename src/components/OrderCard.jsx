@@ -1,7 +1,7 @@
 import React from 'react';
-import { Clock, CheckCircle, ChefHat, Utensils } from 'lucide-react';
+import { Clock, CheckCircle, ChefHat, Utensils, Trash2 } from 'lucide-react';
 
-const OrderCard = ({ order, onUpdateStatus }) => {
+const OrderCard = ({ order, onUpdateStatus, onDeleteOrder }) => {
   const getStatusColor = (status) => {
     switch (status) {
       case 'pending':
@@ -119,14 +119,27 @@ const OrderCard = ({ order, onUpdateStatus }) => {
         </div>
       </div>
 
-      {order.status !== 'served' && (
-        <button
-          onClick={() => onUpdateStatus(order._id, getNextStatus(order.status))}
-          className={`w-full py-3 font-semibold rounded-lg transition-colors duration-200 ${getButtonColor(order.status)}`}
-        >
-          {getNextStatusLabel(order.status)}
-        </button>
-      )}
+      <div className="space-y-2">
+        {order.status !== 'served' && (
+          <button
+            onClick={() => onUpdateStatus(order._id, getNextStatus(order.status))}
+            className={`w-full py-3 font-semibold rounded-lg transition-colors duration-200 ${getButtonColor(order.status)}`}
+          >
+            {getNextStatusLabel(order.status)}
+          </button>
+        )}
+        
+        {onDeleteOrder && (
+          <button
+            onClick={() => onDeleteOrder(order._id, order)}
+            className="w-full py-3 font-semibold rounded-lg transition-colors duration-200 bg-red-500 hover:bg-red-600 text-white flex items-center justify-center gap-2"
+            title="Delete Order"
+          >
+            <Trash2 size={18} />
+            Delete Order
+          </button>
+        )}
+      </div>
     </div>
   );
 };

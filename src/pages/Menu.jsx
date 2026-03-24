@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { ShoppingCart, QrCode } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import axios from 'axios';
 import MenuItem from '../components/MenuItem';
 import Cart from '../components/Cart';
 import Footer from '../components/Footer';
@@ -13,6 +14,30 @@ const Menu = () => {
   const [cart, setCart] = useState([]);
   const [showCart, setShowCart] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState(null);
+  const [menu, setMenu] = useState(menuData); // Initialize with static data as fallback
+  const [loading, setLoading] = useState(true);
+
+  // Fetch menu from API
+  useEffect(() => {
+    const fetchMenu = async () => {
+      try {
+        const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+        const response = await axios.get(`${apiUrl}/api/menu`);
+        
+        // If API returns data, use it; otherwise keep static data
+        if (response.data.categories && response.data.categories.length > 0) {
+          setMenu({ categories: response.data.categories });
+        }
+      } catch (error) {
+        console.log('Using static menu data (API not available)');
+        // Keep using static menuData as fallback
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchMenu();
+  }, []);
 
   // Scroll to top on page load/reload
   useEffect(() => {
@@ -99,7 +124,7 @@ const Menu = () => {
             >
               All Items
             </button>
-            {menuData.categories.map(category => (
+            {menu.categories.map(category => (
               <button
                 key={category.id}
                 onClick={() => setSelectedCategory(category.id)}

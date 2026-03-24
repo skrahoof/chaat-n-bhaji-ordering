@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { ArrowLeft, RefreshCw, Lock, LogOut, BarChart3 } from 'lucide-react';
+import { ArrowLeft, RefreshCw, Lock, LogOut, BarChart3, UtensilsCrossed } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import axios from 'axios';
 import OrderCard from '../components/OrderCard';
@@ -101,6 +101,29 @@ const Admin = () => {
     }
   };
 
+  const handleDeleteOrder = async (orderId, orderDetails) => {
+    // Confirmation dialog
+    const confirmDelete = window.confirm(
+      `Are you sure you want to delete this order?\n\n` +
+      `Table: ${orderDetails.tableNumber}\n` +
+      `Customer: ${orderDetails.customerName}\n` +
+      `Total: ₹${orderDetails.total}\n\n` +
+      `This action cannot be undone.`
+    );
+
+    if (!confirmDelete) return;
+
+    try {
+      const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+      await axios.delete(`${apiUrl}/api/orders/${orderId}`);
+      // Refresh orders after deletion
+      setTimeout(() => fetchOrders(), 300);
+    } catch (error) {
+      console.error('Error deleting order:', error);
+      alert('Failed to delete order. Please try again.');
+    }
+  };
+
   const filteredOrders = orders.filter(order => {
     // Apply status filter
     const statusMatch = filter === 'all' || order.status === filter;
@@ -196,6 +219,14 @@ const Admin = () => {
               </div>
             </div>
             <div className="flex items-center gap-3">
+              <Link
+                to="/menu-management"
+                className="flex items-center gap-2 px-4 py-2 bg-purple-600 hover:bg-purple-700 rounded-lg transition-colors"
+                title="Manage Menu"
+              >
+                <UtensilsCrossed size={20} />
+                <span className="hidden sm:inline">Menu</span>
+              </Link>
               <Link
                 to="/analytics"
                 className="flex items-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-700 rounded-lg transition-colors"
@@ -328,6 +359,7 @@ const Admin = () => {
                 key={order._id}
                 order={order}
                 onUpdateStatus={handleUpdateStatus}
+                onDeleteOrder={handleDeleteOrder}
               />
             ))}
           </div>
