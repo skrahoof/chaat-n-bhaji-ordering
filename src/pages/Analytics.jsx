@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { ArrowLeft, Calendar, TrendingUp, DollarSign, ShoppingBag } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 
 const Analytics = () => {
+  const navigate = useNavigate();
   const [orders, setOrders] = useState([]);
   const [dateRange, setDateRange] = useState('today');
   const [customStartDate, setCustomStartDate] = useState('');
@@ -125,9 +126,12 @@ const Analytics = () => {
         <div className="container mx-auto px-4 py-6">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
-              <Link to="/admin" className="p-2 hover:bg-primary-500 rounded-full transition-colors">
+              <button 
+                onClick={() => navigate('/admin')} 
+                className="p-2 hover:bg-primary-500 rounded-full transition-colors"
+              >
                 <ArrowLeft size={24} />
-              </Link>
+              </button>
               <div>
                 <h1 className="text-3xl font-bold">Sales Analytics</h1>
                 <p className="text-primary-100">{getDateRangeLabel()}</p>

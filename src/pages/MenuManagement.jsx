@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { ArrowLeft, Plus, Edit2, Trash2, Save, X, RotateCcw, Archive } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 
 const MenuManagement = () => {
+  const navigate = useNavigate();
   const [menuItems, setMenuItems] = useState([]);
   const [deletedItems, setDeletedItems] = useState([]);
   const [categories, setCategories] = useState([]);
@@ -167,9 +168,12 @@ const MenuManagement = () => {
         <div className="container mx-auto px-4 py-6">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
-              <Link to="/admin" className="p-2 hover:bg-primary-500 rounded-full transition-colors">
+              <button 
+                onClick={() => navigate('/admin')} 
+                className="p-2 hover:bg-primary-500 rounded-full transition-colors"
+              >
                 <ArrowLeft size={24} />
-              </Link>
+              </button>
               <div>
                 <h1 className="text-3xl font-bold">Menu Management</h1>
                 <p className="text-primary-100">Add, edit, or remove menu items</p>
