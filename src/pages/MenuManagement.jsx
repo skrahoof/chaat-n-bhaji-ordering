@@ -35,10 +35,16 @@ const MenuManagement = () => {
     { id: 'specials', name: 'CHAAT N BHAJI SPECIALS' }
   ];
 
+  // Check authentication on mount
   useEffect(() => {
+    const isAuthenticated = sessionStorage.getItem('adminAuthenticated') === 'true';
+    if (!isAuthenticated) {
+      navigate('/admin');
+      return;
+    }
     fetchMenuItems();
     fetchDeletedItems();
-  }, []);
+  }, [navigate]);
 
   const fetchMenuItems = async () => {
     setLoading(true);

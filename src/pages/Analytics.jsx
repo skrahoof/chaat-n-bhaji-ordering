@@ -11,9 +11,15 @@ const Analytics = () => {
   const [customEndDate, setCustomEndDate] = useState('');
   const [loading, setLoading] = useState(false);
 
+  // Check authentication on mount
   useEffect(() => {
+    const isAuthenticated = sessionStorage.getItem('adminAuthenticated') === 'true';
+    if (!isAuthenticated) {
+      navigate('/admin');
+      return;
+    }
     fetchOrders();
-  }, []);
+  }, [navigate]);
 
   const fetchOrders = async () => {
     setLoading(true);

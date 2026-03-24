@@ -9,7 +9,10 @@ const Admin = () => {
   const [filter, setFilter] = useState('all');
   const [dateFilter, setDateFilter] = useState('all'); // 'all' or 'today'
   const [loading, setLoading] = useState(false);
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [isAuthenticated, setIsAuthenticated] = useState(() => {
+    // Check if user is already authenticated in this session
+    return sessionStorage.getItem('adminAuthenticated') === 'true';
+  });
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [previousOrderCount, setPreviousOrderCount] = useState(0);
@@ -71,6 +74,7 @@ const Admin = () => {
     e.preventDefault();
     if (password === ADMIN_PASSWORD) {
       setIsAuthenticated(true);
+      sessionStorage.setItem('adminAuthenticated', 'true');
       setError('');
       setPassword('');
     } else {
@@ -81,6 +85,7 @@ const Admin = () => {
 
   const handleLogout = () => {
     setIsAuthenticated(false);
+    sessionStorage.removeItem('adminAuthenticated');
     setOrders([]);
     setFilter('all');
     setDateFilter('all');
