@@ -33,11 +33,11 @@ const Footer = () => {
             <h4 className="text-lg font-semibold mb-4 text-primary-400">Contact Us</h4>
             <div className="space-y-3">
               <a
-                href="tel:+919177615696"
+                href="tel:+917675813508"
                 className="flex items-center gap-2 text-gray-300 hover:text-primary-400 transition-colors text-sm"
               >
                 <Phone size={18} className="flex-shrink-0" />
-                <span>+91 9177615696</span>
+                <span>+91 7675813508</span>
               </a>
               
               <a
@@ -45,7 +45,7 @@ const Footer = () => {
                 className="flex items-center gap-2 text-gray-300 hover:text-primary-400 transition-colors text-sm"
               >
                 <Mail size={18} className="flex-shrink-0" />
-                <span>skrahoof123@gmail.com</span>
+                <span>chaatnbhaji@gmail.com</span>
               </a>
               
               <div className="flex items-start gap-2 text-gray-300 text-sm">
