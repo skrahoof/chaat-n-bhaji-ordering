@@ -1,14 +1,16 @@
 import React, { useState, useEffect } from 'react';
-import { ArrowLeft, Plus, Edit2, Trash2, Save, X } from 'lucide-react';
+import { ArrowLeft, Plus, Edit2, Trash2, Save, X, RotateCcw, Archive } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import axios from 'axios';
 
 const MenuManagement = () => {
   const [menuItems, setMenuItems] = useState([]);
+  const [deletedItems, setDeletedItems] = useState([]);
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(false);
   const [showAddForm, setShowAddForm] = useState(false);
   const [editingItem, setEditingItem] = useState(null);
+  const [viewMode, setViewMode] = useState('active'); // 'active' or 'deleted'
   
   // Form state
   const [formData, setFormData] = useState({
@@ -34,6 +36,7 @@ const MenuManagement = () => {
 
   useEffect(() => {
     fetchMenuItems();
+    fetchDeletedItems();
   }, []);
 
   const fetchMenuItems = async () => {
@@ -46,6 +49,16 @@ const MenuManagement = () => {
       console.error('Error fetching menu:', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchDeletedItems = async () => {
+    try {
+      const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+      const response = await axios.get(`${apiUrl}/api/menu/deleted`);
+      setDeletedItems(response.data.categories || []);
+    } catch (error) {
+      console.error('Error fetching deleted items:', error);
     }
   };
 
@@ -100,7 +113,7 @@ const MenuManagement = () => {
 
   const handleDelete = async (itemId, itemName) => {
     const confirmDelete = window.confirm(
-      `Are you sure you want to delete "${itemName}"?\n\nThis action cannot be undone.`
+      `Are you sure you want to delete "${itemName}"?\n\nDon't worry! You can restore it later from the "Deleted Items" tab.`
     );
 
     if (!confirmDelete) return;
@@ -109,9 +122,28 @@ const MenuManagement = () => {
       const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000';
       await axios.delete(`${apiUrl}/api/menu/${itemId}`);
       fetchMenuItems();
+      fetchDeletedItems();
     } catch (error) {
       console.error('Error deleting menu item:', error);
       alert('Failed to delete menu item. Please try again.');
+    }
+  };
+
+  const handleRestore = async (itemId, itemName) => {
+    const confirmRestore = window.confirm(
+      `Restore "${itemName}" back to the menu?`
+    );
+
+    if (!confirmRestore) return;
+
+    try {
+      const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+      await axios.patch(`${apiUrl}/api/menu/${itemId}/restore`);
+      fetchMenuItems();
+      fetchDeletedItems();
+    } catch (error) {
+      console.error('Error restoring menu item:', error);
+      alert('Failed to restore menu item. Please try again.');
     }
   };
 
@@ -156,6 +188,32 @@ const MenuManagement = () => {
 
       {/* Main Content */}
       <main className="container mx-auto px-4 py-8">
+        {/* View Mode Tabs */}
+        <div className="mb-6 flex gap-3">
+          <button
+            onClick={() => setViewMode('active')}
+            className={`flex items-center gap-2 px-6 py-3 rounded-lg font-semibold transition-all ${
+              viewMode === 'active'
+                ? 'bg-primary-600 text-white shadow-lg'
+                : 'bg-white text-gray-700 hover:bg-gray-50'
+            }`}
+          >
+            <Plus size={20} />
+            Active Menu ({menuItems.reduce((sum, cat) => sum + cat.items.length, 0)})
+          </button>
+          <button
+            onClick={() => setViewMode('deleted')}
+            className={`flex items-center gap-2 px-6 py-3 rounded-lg font-semibold transition-all ${
+              viewMode === 'deleted'
+                ? 'bg-red-600 text-white shadow-lg'
+                : 'bg-white text-gray-700 hover:bg-gray-50'
+            }`}
+          >
+            <Archive size={20} />
+            Deleted Items ({deletedItems.reduce((sum, cat) => sum + cat.items.length, 0)})
+          </button>
+        </div>
+
         {/* Add/Edit Form Modal */}
         {showAddForm && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
@@ -287,15 +345,16 @@ const MenuManagement = () => {
             <div className="text-4xl mb-4">⏳</div>
             <p className="text-xl text-gray-500">Loading menu...</p>
           </div>
-        ) : menuItems.length === 0 ? (
-          <div className="text-center py-16">
-            <div className="text-6xl mb-4">🍽️</div>
-            <p className="text-xl text-gray-500 mb-4">No menu items found</p>
-            <p className="text-gray-400">Click "Add New Item" to create your first menu item</p>
-          </div>
-        ) : (
-          <div className="space-y-8">
-            {menuItems.map(category => (
+        ) : viewMode === 'active' ? (
+          menuItems.length === 0 ? (
+            <div className="text-center py-16">
+              <div className="text-6xl mb-4">🍽️</div>
+              <p className="text-xl text-gray-500 mb-4">No menu items found</p>
+              <p className="text-gray-400">Click "Add New Item" to create your first menu item</p>
+            </div>
+          ) : (
+            <div className="space-y-8">
+              {menuItems.map(category => (
               <div key={category.id} className="bg-white rounded-2xl shadow-lg p-6">
                 <h2 className="text-2xl font-bold text-gray-800 mb-4">{category.name}</h2>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -333,6 +392,54 @@ const MenuManagement = () => {
               </div>
             ))}
           </div>
+          )
+        ) : (
+          /* Deleted Items View */
+          deletedItems.length === 0 ? (
+            <div className="text-center py-16">
+              <div className="text-6xl mb-4">✨</div>
+              <p className="text-xl text-gray-500 mb-4">No deleted items</p>
+              <p className="text-gray-400">Deleted items will appear here and can be restored</p>
+            </div>
+          ) : (
+            <div className="space-y-8">
+              {deletedItems.map(category => (
+              <div key={category.id} className="bg-white rounded-2xl shadow-lg p-6">
+                <h2 className="text-2xl font-bold text-gray-800 mb-4">{category.name}</h2>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {category.items.map(item => (
+                    <div
+                      key={item.id}
+                      className="border border-red-200 bg-red-50 rounded-lg p-4 hover:shadow-md transition-shadow"
+                    >
+                      <div className="flex items-start justify-between mb-2">
+                        <div className="flex-1">
+                          <h3 className="font-semibold text-gray-800">{item.name}</h3>
+                          <p className="text-sm text-gray-600 mt-1">{item.description}</p>
+                          <p className="text-lg font-bold text-primary-600 mt-2">₹{item.price}</p>
+                          {item.deletedAt && (
+                            <p className="text-xs text-red-600 mt-2">
+                              Deleted: {new Date(item.deletedAt).toLocaleDateString('en-IN')}
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                      <div className="flex gap-2 mt-3">
+                        <button
+                          onClick={() => handleRestore(item.id, item.name)}
+                          className="flex-1 flex items-center justify-center gap-1 px-3 py-2 bg-green-500 text-white rounded-lg text-sm font-semibold hover:bg-green-600 transition-colors"
+                        >
+                          <RotateCcw size={16} />
+                          Restore
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+          )
         )}
       </main>
     </div>

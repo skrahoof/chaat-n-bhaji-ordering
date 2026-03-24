@@ -203,7 +203,8 @@ app.delete('/api/orders/:id', async (req, res) => {
 // Get all menu items (grouped by category)
 app.get('/api/menu', async (req, res) => {
   try {
-    const menuItems = await menuCollection.find({}).toArray();
+    // Only fetch non-deleted items
+    const menuItems = await menuCollection.find({ isDeleted: { $ne: true } }).toArray();
     
     // Group by category
     const categories = {};
@@ -268,6 +269,7 @@ app.post('/api/menu', async (req, res) => {
       name,
       price: parseFloat(price),
       description,
+      isDeleted: false,
       createdAt: new Date()
     };
     
@@ -314,8 +316,91 @@ app.patch('/api/menu/:id', async (req, res) => {
   }
 });
 
-// Delete menu item
+// Soft delete menu item
 app.delete('/api/menu/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    
+    const result = await menuCollection.updateOne(
+      { _id: new ObjectId(id) },
+      { 
+        $set: { 
+          isDeleted: true,
+          deletedAt: new Date()
+        }
+      }
+    );
+    
+    if (result.matchedCount === 0) {
+      return res.status(404).json({ error: 'Menu item not found' });
+    }
+    
+    res.json({ message: 'Menu item deleted successfully' });
+  } catch (error) {
+    console.error('Error deleting menu item:', error);
+    res.status(500).json({ error: 'Failed to delete menu item' });
+  }
+});
+
+// Get deleted menu items (for backup/restore)
+app.get('/api/menu/deleted', async (req, res) => {
+  try {
+    const deletedItems = await menuCollection.find({ isDeleted: true }).toArray();
+    
+    // Group by category
+    const categories = {};
+    deletedItems.forEach(item => {
+      if (!categories[item.categoryId]) {
+        categories[item.categoryId] = {
+          id: item.categoryId,
+          name: item.categoryName,
+          items: []
+        };
+      }
+      categories[item.categoryId].items.push({
+        id: item._id,
+        itemId: item.itemId,
+        name: item.name,
+        price: item.price,
+        description: item.description,
+        deletedAt: item.deletedAt
+      });
+    });
+    
+    res.json({ categories: Object.values(categories) });
+  } catch (error) {
+    console.error('Error fetching deleted items:', error);
+    res.status(500).json({ error: 'Failed to fetch deleted items' });
+  }
+});
+
+// Restore deleted menu item
+app.patch('/api/menu/:id/restore', async (req, res) => {
+  try {
+    const { id } = req.params;
+    
+    const result = await menuCollection.updateOne(
+      { _id: new ObjectId(id) },
+      { 
+        $set: { isDeleted: false },
+        $unset: { deletedAt: "" }
+      }
+    );
+    
+    if (result.matchedCount === 0) {
+      return res.status(404).json({ error: 'Menu item not found' });
+    }
+    
+    const restoredItem = await menuCollection.findOne({ _id: new ObjectId(id) });
+    res.json({ message: 'Menu item restored successfully', item: restoredItem });
+  } catch (error) {
+    console.error('Error restoring menu item:', error);
+    res.status(500).json({ error: 'Failed to restore menu item' });
+  }
+});
+
+// Permanently delete menu item (admin only - use with caution)
+app.delete('/api/menu/:id/permanent', async (req, res) => {
   try {
     const { id } = req.params;
     
@@ -325,10 +410,10 @@ app.delete('/api/menu/:id', async (req, res) => {
       return res.status(404).json({ error: 'Menu item not found' });
     }
     
-    res.json({ message: 'Menu item deleted successfully' });
+    res.json({ message: 'Menu item permanently deleted' });
   } catch (error) {
-    console.error('Error deleting menu item:', error);
-    res.status(500).json({ error: 'Failed to delete menu item' });
+    console.error('Error permanently deleting menu item:', error);
+    res.status(500).json({ error: 'Failed to permanently delete menu item' });
   }
 });
 
