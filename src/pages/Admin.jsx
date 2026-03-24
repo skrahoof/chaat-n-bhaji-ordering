@@ -7,6 +7,7 @@ import OrderCard from '../components/OrderCard';
 const Admin = () => {
   const [orders, setOrders] = useState([]);
   const [filter, setFilter] = useState('all');
+  const [dateFilter, setDateFilter] = useState('all'); // 'all' or 'today'
   const [loading, setLoading] = useState(false);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [password, setPassword] = useState('');
@@ -82,6 +83,7 @@ const Admin = () => {
     setIsAuthenticated(false);
     setOrders([]);
     setFilter('all');
+    setDateFilter('all');
   };
 
   const handleUpdateStatus = async (orderId, newStatus) => {
@@ -100,8 +102,18 @@ const Admin = () => {
   };
 
   const filteredOrders = orders.filter(order => {
-    if (filter === 'all') return true;
-    return order.status === filter;
+    // Apply status filter
+    const statusMatch = filter === 'all' || order.status === filter;
+    
+    // Apply date filter
+    let dateMatch = true;
+    if (dateFilter === 'today') {
+      const orderDate = new Date(order.timestamp);
+      const today = new Date();
+      dateMatch = orderDate.toDateString() === today.toDateString();
+    }
+    
+    return statusMatch && dateMatch;
   });
 
   const getOrderCount = (status) => {
@@ -272,6 +284,33 @@ const Admin = () => {
             >
               <div className="text-2xl font-bold">{getOrderCount('served')}</div>
               <div className="text-sm">Served</div>
+            </button>
+          </div>
+        </div>
+
+        {/* Date Filter */}
+        <div className="mb-8">
+          <h3 className="text-sm font-semibold text-gray-600 mb-3">Filter by Date</h3>
+          <div className="flex gap-3">
+            <button
+              onClick={() => setDateFilter('all')}
+              className={`px-6 py-3 rounded-lg font-semibold transition-all ${
+                dateFilter === 'all'
+                  ? 'bg-gray-800 text-white shadow-lg'
+                  : 'bg-white text-gray-700 hover:bg-gray-50 border border-gray-300'
+              }`}
+            >
+              All Time
+            </button>
+            <button
+              onClick={() => setDateFilter('today')}
+              className={`px-6 py-3 rounded-lg font-semibold transition-all ${
+                dateFilter === 'today'
+                  ? 'bg-gray-800 text-white shadow-lg'
+                  : 'bg-white text-gray-700 hover:bg-gray-50 border border-gray-300'
+              }`}
+            >
+              Today Only
             </button>
           </div>
         </div>

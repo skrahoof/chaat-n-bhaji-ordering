@@ -73,7 +73,17 @@ const OrderCard = ({ order, onUpdateStatus }) => {
 
   const formatTime = (timestamp) => {
     const date = new Date(timestamp);
-    return date.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' });
+    const today = new Date();
+    const isToday = date.toDateString() === today.toDateString();
+    
+    const time = date.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' });
+    
+    if (isToday) {
+      return `Today, ${time}`;
+    } else {
+      const dateStr = date.toLocaleDateString('en-IN', { day: 'numeric', month: 'short' });
+      return `${dateStr}, ${time}`;
+    }
   };
 
   return (
